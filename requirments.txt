@@ -1,0 +1,5 @@
+SQLAlchemy
+fastapi
+uvicorn
+bcrypt
+pandas
