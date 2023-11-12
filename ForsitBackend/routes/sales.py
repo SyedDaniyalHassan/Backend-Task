@@ -1,10 +1,15 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+
+from ForsitBackend.plogger import PLogger
 from ..database import get_db
 from ..models import Sale, Category, Product
 from datetime import datetime
 from ..service import calculate_daily_revenue,calculate_weekly_revenue, calculate_monthly_revenue, calculate_annual_revenue,calculate_revenue
+
+logger = PLogger(name="my_fastapi_logger", level=logging.INFO).get_logger()
 
 router = APIRouter()
 
@@ -16,6 +21,7 @@ def get_sales_data(
     category_id: int = None,
     db: Session = Depends(get_db)
 ):
+    logger.info(f"Received a request on the sales root endpoint with params start Date={start_date}, end Date={end_date}, product_id={product_id}, catgory_id={category_id}")
     try:
         # Parse start_date and end_date parameters to datetime objects if provided
         parsed_start_date = datetime.strptime(start_date, "%Y-%m-%d") if start_date else None
@@ -51,10 +57,11 @@ def get_sales_data(
         return response_data
 
     except ValueError:
+        logger.error(f"Exception Occurred by Invalid date format. Please provide dates in YYYY-MM-DD format.")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date format. Please provide dates in YYYY-MM-DD format.")
     except Exception as e:
         # Log the exception for debugging purposes
-        print(f"Error: {e}")
+        logger.error(f"{e}")
 
         # Raise an HTTPException with a 500 Internal Server Error status code
         raise HTTPException(
@@ -70,6 +77,7 @@ def get_revenue_data(
     category_id: int = None,
     db: Session = Depends(get_db)
 ):
+    logger.info(f"Received a request on the sales revenu endpoint with params start_date={start_date}, end_date={end_date}, period={period}, category_id={category_id}")
     try:
         # Parse start_date and end_date parameters to datetime objects if provided
         parsed_start_date = datetime.strptime(start_date, "%Y-%m-%d") if start_date else None
@@ -126,6 +134,7 @@ def compare_revenue(
     frequency: str = 'daily',
     db: Session = Depends(get_db)
 ):
+    logger.info(f"Received a request on the sales Compare endpoint with params start_date={start_date}, end_date={end_date}, frequecy={frequency}, category_id={category_id}")
     try:
         # Parse start_date and end_date parameters to datetime objects if provided
         parsed_start_date = datetime.strptime(start_date, "%Y-%m-%d") if start_date else None
@@ -151,10 +160,11 @@ def compare_revenue(
         return revenue_data
 
     except ValueError:
+        logger.error("Invalid date format. Please provide dates in YYYY-MM-DD format.")
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid date format. Please provide dates in YYYY-MM-DD format.")
     except Exception as e:
         # Log the exception for debugging purposes
-        print(f"Error: {e}")
+        logger.error(f"Exception occurred by :: {e}")
 
         # Raise an HTTPException with a 500 Internal Server Error status code
         raise HTTPException(

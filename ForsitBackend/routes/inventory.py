@@ -1,10 +1,16 @@
+import logging
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
+
+from ForsitBackend.plogger import PLogger
 from ..database import get_db
 from ..models import Inventory, InventoryLog, Product, LowStockAlert, Category
 from .. import schemas
 from datetime import datetime
+
+logger = PLogger(name="my_fastapi_logger", level=logging.INFO).get_logger()
+
 
 router = APIRouter()
 
@@ -14,6 +20,7 @@ def get_inventory_status(
     category_id: int = None,
     db: Session = Depends(get_db)
 ):
+    logger.info(f"Received a request on the inventory root endpoint with params product_id={product_id}, catgory_id={category_id}")
     try:
         # Retrieve inventory status based on product_id and category_id
         if product_id:
@@ -37,7 +44,7 @@ def get_inventory_status(
 
     except Exception as e:
         # Log the exception for debugging purposes
-        print(f"Error: {e}")
+        logger.error(f"Exception Occurred :: {e}")
 
         # Raise an HTTPException with a 500 Internal Server Error status code
         raise HTTPException(
@@ -50,6 +57,7 @@ def add_new_category_to_inventory(
     request: schemas.CategorySchema,
     db: Session = Depends(get_db)
 ):
+    logger.info(f"Received a request on the inventory add-category ")
     try:
         existing_category = db.query(Category).filter(Category.CategoryName == request.category_name).first()
         if existing_category:
@@ -62,7 +70,7 @@ def add_new_category_to_inventory(
         # If an exception occurs, rollback the transaction
         db.rollback()
         # Add logs for debugging purpose
-        print(f"Exception {e}")
+        logger.error("Internal Server Error")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='Internal Server Error')
 
 @router.post("/add-product/")
@@ -70,6 +78,7 @@ def add_new_product_to_inventory(
     request: schemas.ProdcutSchema,
     db: Session = Depends(get_db)
 ):
+    logger.info(f"Received a request on the inventory add-product")
     try:
         # Check if the product already exists in the database
         existing_product = db.query(Product).filter(Product.ProductName == request.product_name).first()
@@ -99,7 +108,7 @@ def add_new_product_to_inventory(
     except Exception as e:
         # If an exception occurs, rollback the transaction
         db.rollback()
-        print(f'Exception :: {e}')
+        logger.error(f'Exception :: {e}')
         # Raise an HTTPException with a 500 Internal Server Error status code
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
@@ -109,6 +118,7 @@ def update_inventory(
     request: schemas.InventorySchema,
     db: Session = Depends(get_db)
 ):
+    logger.info("Received a request on the inventory Update")
     try:
         # Check if the product exists
         product = db.query(Product).filter(Product.ProductID == request.product_id).first()
@@ -140,7 +150,7 @@ def update_inventory(
     except Exception as e:
         # If an exception occurs, rollback the transaction
         db.rollback()
-        print(f'Exception :: {e}')
+        logger.error(f'Exception :: {e}')
         # Raise an HTTPException with a 500 Internal Server Error status code
         raise HTTPException(status_code=500, detail="Internal Server Error")
     
@@ -149,6 +159,7 @@ def get_low_stock_alerts(
     db: Session = Depends(get_db)
 ):
     # Retrieve products with low stock levels from LowStockAlert table
+    logger.info("Received a request on the inventory low-stock-alert")
     low_stock_products = db.query(LowStockAlert).all()
 
     if not low_stock_products:

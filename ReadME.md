@@ -1,7 +1,7 @@
 Make the 'Backend-Task' as your current working Directory
 
 Install All dependecies 
-    `pip3 install requirments.txt`
+    `pip3 install -r requirments.txt`
 
 Run the Server by following command:
     `uvicorn ForsitBackend.main:app`
